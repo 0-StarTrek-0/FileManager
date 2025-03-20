@@ -11,6 +11,7 @@ class FileWriting : public QObject, public QRunnable
 {
     Q_OBJECT
 public:
+    //Коды результата записи
     enum ResultCode
     {
         Result_sucf,
@@ -33,12 +34,16 @@ signals:
 
 private:
     QFile File;
+    //Ссылка на данные
     QByteArray& Data;
+    //Размер чанка записи
     quint64 SizeChunkWrite;
 
+    //Переменные для засекания времени
     QElapsedTimer time;
     QElapsedTimer last_time;
 
+    //Атомарные переменные
     QAtomicInt CancelMarker;
 };
 

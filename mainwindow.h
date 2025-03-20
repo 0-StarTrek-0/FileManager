@@ -9,6 +9,8 @@
 
 #include "fileread.h"
 #include "filewrite.h"
+#include "log.h"
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -49,7 +51,10 @@ private:
     FileWriting* newfilewrite;
 
     QString FileExtensions{"Text files (*.txt);;Exel files (*.xlsx *.xlsb *.xlsm);;Images (*.png *.xpm *.jpg);;XML files (*.xml);;Music (*.mp3);;All files (*.*);;"};
+    QString InformationFile;
+    QString PathFile;
 
+    Log loger;
     Ui::MainWindow *ui;
 };
 #endif // MAINWINDOW_H

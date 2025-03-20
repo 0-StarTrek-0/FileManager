@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
+#include "log.h"
 #include <QDebug>
 
 
@@ -13,17 +14,12 @@ MainWindow::~MainWindow()
     //Сигнал приостановки чтения и записи в случае закрытия окна во время одного из процессов
     emit cancelRead();
     emit cancelWrite();
-
-    //Освобождаем память
-    delete newfilewrite;
-    delete newfileread;
     delete ui;
 }
 
 void MainWindow::on_Button_File_Sistem_clicked()
 {
     //Выбираем путь до файла и сохраняем его в line_Path_File и строку PathFile
-    QString PathFile;
     PathFile = QFileDialog::getOpenFileName(this, "Открыть файл...");
     ui->line_Path_File->setText(PathFile);
 }
@@ -67,10 +63,10 @@ void MainWindow::on_Button_Save_as_clicked()
         return;
     }
     //Выбираем путь где будет хранится файл и сохряняем его название
-    QString NameFile = QFileDialog::getSaveFileName(this, "Cохранить файл как...", QDir::currentPath(), FileExtensions);
+    PathFile = QFileDialog::getSaveFileName(this, "Cохранить файл как...", QDir::currentPath(), FileExtensions);
 
     //Создаем экземпляр класса FileWriting
-    newfilewrite = new FileWriting(NameFile, DataFile);
+    newfilewrite = new FileWriting(PathFile, DataFile);
     connect(newfilewrite, SIGNAL(progressChanged(float,float,float,float,float)),SLOT(onProgressWrite(float,float,float,float,float)));
     connect(newfilewrite, SIGNAL(writingData(int)),                              SLOT(onWritingData(int)));
     connect(ui->Button_Cancellation, SIGNAL(clicked(bool)), newfilewrite,        SLOT(cancel()));
@@ -104,13 +100,17 @@ void MainWindow::onReadingInformation(int resultCode, const QString& infomation)
     switch (resultCode)
     {
     case FileReading::Result_sucf:
+        InformationFile = infomation;
+        loger.SaveFile("Read Information File - successful", InformationFile);
         ui->statusbar->showMessage("Информация о файле прочитана", 2000);
         ui->Window_Information->setText(infomation);
         break;
     case FileReading::Result_fail:
+        loger.SaveFile("Read Information File - error");
         ui->statusbar->showMessage("Ошибка чтения данных", 2000);
         break;
     case FileReading::Result_cancel:
+        loger.SaveFile("Read Information File - cancel");
         ui->statusbar->showMessage("Чтение данных отменено", 2000);
         break;
     default:
@@ -134,10 +134,12 @@ void MainWindow::onWritingData(int resultCode)
     switch (resultCode)
     {
     case FileReading::Result_sucf:
+        loger.SaveFile("Write File - successful", PathFile);
         ui->statusbar->showMessage("Данные записаны", 2000);
         break;
 
     case FileReading::Result_fail:
+        loger.SaveFile("Write File - error", PathFile);
         ui->statusbar->showMessage("Ошибка записи данных", 2000);
 
         ui->label_time->setText("Оставшееся время: 0.00 cек");
@@ -147,6 +149,7 @@ void MainWindow::onWritingData(int resultCode)
         break;
 
     case FileReading::Result_cancel:
+        loger.SaveFile("Write File - cansel", PathFile);
         ui->statusbar->showMessage("Запись данных отменена", 2000);
         ui->ProgressBar_Load->setValue(0);
 
@@ -170,6 +173,7 @@ void MainWindow::onReadingData(int resultCode, const QByteArray& data )
     {
         case FileReading::Result_sucf:
             DataFile = data;
+            loger.SaveFile("Read Data File - successful", InformationFile);
             ui->statusbar->showMessage("Данные прочитаны", 2000);
 
             ui->Button_Cancellation ->setEnabled(false);
@@ -178,6 +182,7 @@ void MainWindow::onReadingData(int resultCode, const QByteArray& data )
             break;
 
         case FileReading::Result_fail:
+            loger.SaveFile("Read Data File - error");
             ui->statusbar->showMessage("Ошибка чтения данных", 2000);
 
             ui->Button_Cancellation ->setEnabled(false);
@@ -186,6 +191,7 @@ void MainWindow::onReadingData(int resultCode, const QByteArray& data )
             break;
 
         case FileReading::Result_cancel:
+            loger.SaveFile("Read Data File - cancel", InformationFile);
             ui->statusbar->showMessage("Чтение данных отменено", 2000);
 
             ui->ProgressBar_Load->setValue(0);
@@ -200,11 +206,13 @@ void MainWindow::onReadingData(int resultCode, const QByteArray& data )
             break;
 
         case FileReading::Result_pause:
+            loger.SaveFile("Read Data File - pause", InformationFile);
             ui->statusbar->showMessage("Чтение данных временно остановлено", 2000);
             ui->Button_Pause->setText("Возобновить");
             break;
 
         case FileReading::Result_resume:
+            loger.SaveFile("Read Data File - resume", InformationFile);
             ui->statusbar->showMessage("Чтение данных возобновлено", 2000);
             ui->Button_Pause->setText("Пауза");
             break;

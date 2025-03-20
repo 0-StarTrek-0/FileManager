@@ -40,9 +40,9 @@ signals:
 private:
     QFile File;
     QFileInfo FileInfo;
+    //Размер чанка для единоразового считывания с файла
     quint64 SizeChunkRead;
 
-    //QWaitCondition pauseMeneger;
     //Переменные для засекания времени
     QElapsedTimer time;
     QElapsedTimer last_time;

@@ -13,6 +13,7 @@ class FileReading : public QObject, public QRunnable
 {
     Q_OBJECT
 public:
+    //Коды результата чтения
     enum ResultCode
     {
         Result_sucf,
@@ -41,10 +42,12 @@ private:
     QFileInfo FileInfo;
     quint64 SizeChunkRead;
 
-    QWaitCondition pauseMeneger;
+    //QWaitCondition pauseMeneger;
+    //Переменные для засекания времени
     QElapsedTimer time;
     QElapsedTimer last_time;
 
+    //Атомарные переменные
     QAtomicInt CancelMarker;
     QAtomicInt PauseMarker;
 };

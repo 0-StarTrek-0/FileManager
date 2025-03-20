@@ -12,8 +12,10 @@ FileReading::~FileReading() {}
 
 void FileReading::run()
 {
+    //Проверка открытия файла
     if(!File.open(QIODevice::ReadOnly))
     {
+        //Уведомление о фейле чтения
         emit readingData(Result_fail);
         return;
     }
@@ -22,6 +24,7 @@ void FileReading::run()
     QByteArray Chunk;
     QString InfoFile;
 
+    //Сборка информации о файле в строку
     InfoFile.append("Информация о файле: "      + FileInfo.fileName()                +
                      "\nПуть к файлу: "         + FileInfo.absoluteFilePath()        +
                      "\nРазмер файла: "         + QString::number(FileInfo.size())   + " байт" +
@@ -31,6 +34,7 @@ void FileReading::run()
 
     last_time.start();
     do {
+        //Проверка на нажатие кнопки паузы или отмены
         if(CancelMarker.testAndSetAcquire(true, true))
         {
             emit readingData(Result_cancel);
@@ -41,12 +45,12 @@ void FileReading::run()
             emit readingData(Result_pause);
             while(PauseMarker.testAndSetAcquire(true, true))
             {
-                qDebug() << "stoop";
                 QThread::msleep(500);
             }
             emit readingData(Result_resume);
         }
 
+        //Считывание части файла размером с Chunk и запись в массив Data;
         try
         {
             time.start();
@@ -66,14 +70,17 @@ void FileReading::run()
         float remainingtime = static_cast<float>(File.size() - File.pos()) / speedread;
         float lasttime = last_time.elapsed();
         float mediumspeed = static_cast<float>(File.pos()) / lasttime;
+        //Отправка данных в основное окно
         emit progressChanged(procent, remainingtime, speedread, lasttime, mediumspeed);
     } while(!Chunk.isEmpty());
 
     if(File.error() != QFile::NoError)
     {
+        //Уведомление о фейле чтения
         emit readingData(Result_fail);
         return;
     }
+    //Уведомление об успешности чтения
     emit readingData(Result_sucf, Data);
     File.close();
 }

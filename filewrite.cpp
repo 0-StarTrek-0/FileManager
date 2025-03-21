@@ -15,7 +15,7 @@ FileWriting::~FileWriting()
 
 void FileWriting::run()
 {
-    //Проверка открытия файла
+    //Попытка открытия файла и его проверка на открытие
     if(!File.open(QIODevice::WriteOnly))
     {
         emit writingData(Result_fail);
@@ -32,6 +32,24 @@ void FileWriting::run()
         {
             emit writingData(Result_cancel);
             return;
+        }
+        //Нажата кнопка паузы в ходим в бесконечный цикл ожидания, пока не будет изменен PauseMarker
+        if(PauseMarker.testAndSetAcquire(true, true))
+        {
+            emit writingData(Result_pause);
+            while(PauseMarker.testAndSetOrdered(true, true))
+            {
+                if(CancelMarker.testAndSetAcquire(true, true))
+                {
+                    emit writingData(Result_cancel);
+                    return;
+                }
+                QThread::msleep(500);
+            }
+            //Обнуляем PauseMarker
+            PauseMarker.deref();
+            PauseMarker.deref();
+            emit writingData(Result_resume);
         }
 
         time.start();
@@ -75,4 +93,9 @@ void FileWriting::run()
 void FileWriting::cancel()
 {
     CancelMarker.fetchAndAddAcquire(true);
+}
+
+void FileWriting::pause()
+{
+    PauseMarker.fetchAndAddAcquire(true);
 }

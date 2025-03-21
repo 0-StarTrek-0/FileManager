@@ -11,6 +11,7 @@ class Log
 {
 public:
     Log();
+    ~Log();
     void SaveFile(QString Action, QString InformationFile = QString("None"));
 
 private:

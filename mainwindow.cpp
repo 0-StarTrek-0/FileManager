@@ -14,6 +14,7 @@ MainWindow::~MainWindow()
     //Сигнал приостановки чтения и записи в случае закрытия окна во время одного из процессов
     emit cancelRead();
     emit cancelWrite();
+
     delete ui;
 }
 
@@ -70,6 +71,7 @@ void MainWindow::on_Button_Save_as_clicked()
     connect(newfilewrite, SIGNAL(progressChanged(float,float,float,float,float)),SLOT(onProgressWrite(float,float,float,float,float)));
     connect(newfilewrite, SIGNAL(writingData(int)),                              SLOT(onWritingData(int)));
     connect(ui->Button_Cancellation, SIGNAL(clicked(bool)), newfilewrite,        SLOT(cancel()));
+    connect(ui->Button_Pause,        SIGNAL(clicked()),     newfilewrite,        SLOT(pause()));
 
     //Запускаем поток на чтение
     QThreadPool::globalInstance()->start(newfilewrite);
@@ -133,12 +135,16 @@ void MainWindow::onWritingData(int resultCode)
     //Вывод результат записи
     switch (resultCode)
     {
-    case FileReading::Result_sucf:
+    case FileWriting::Result_sucf:
         loger.SaveFile("Write File - successful", PathFile);
         ui->statusbar->showMessage("Данные записаны", 2000);
+
+        ui->Button_Cancellation ->setEnabled(false);
+        ui->Button_Pause        ->setEnabled(false);
+        ui->Button_Read_File    ->setEnabled(true);
         break;
 
-    case FileReading::Result_fail:
+    case FileWriting::Result_fail:
         loger.SaveFile("Write File - error", PathFile);
         ui->statusbar->showMessage("Ошибка записи данных", 2000);
 
@@ -146,9 +152,13 @@ void MainWindow::onWritingData(int resultCode)
         ui->label_speed_byte->setText("Скорость записи:     0.00 кБайт/cек");
         ui->label_last_time->setText("Прошедшее время:           0.00 cек");
         ui->label_medium_speed->setText("Средняя скорость записи: 0.00 кБайт/cек");
+
+        ui->Button_Cancellation ->setEnabled(false);
+        ui->Button_Pause        ->setEnabled(false);
+        ui->Button_Read_File    ->setEnabled(true);
         break;
 
-    case FileReading::Result_cancel:
+    case FileWriting::Result_cancel:
         loger.SaveFile("Write File - cansel", PathFile);
         ui->statusbar->showMessage("Запись данных отменена", 2000);
         ui->ProgressBar_Load->setValue(0);
@@ -157,14 +167,27 @@ void MainWindow::onWritingData(int resultCode)
         ui->label_speed_byte->setText("Скорость записи:     0.00 кБайт/cек");
         ui->label_last_time->setText("Прошедшее время:           0.00 cек");
         ui->label_medium_speed->setText("Средняя скорость записи: 0.00 кБайт/cек");
+
+        ui->Button_Cancellation ->setEnabled(false);
+        ui->Button_Pause        ->setEnabled(false);
+        ui->Button_Read_File    ->setEnabled(true);
+        break;
+
+    case FileWriting::Result_pause:
+        loger.SaveFile("Write File - pause", PathFile);
+        ui->statusbar->showMessage("Запись данных временно остановлена", 2000);
+        ui->Button_Pause->setText("Возобновить");
+        break;
+
+    case FileWriting::Result_resume:
+        loger.SaveFile("Write File - resume", PathFile);
+        ui->statusbar->showMessage("Запись данных возобновлена", 2000);
+        ui->Button_Pause->setText("Пауза");
         break;
 
     default:
         break;
     }
-    ui->Button_Cancellation ->setEnabled(false);
-    ui->Button_Pause        ->setEnabled(false);
-    ui->Button_Read_File    ->setEnabled(true);
 }
 void MainWindow::onReadingData(int resultCode, const QByteArray& data )
 {
@@ -184,6 +207,11 @@ void MainWindow::onReadingData(int resultCode, const QByteArray& data )
         case FileReading::Result_fail:
             loger.SaveFile("Read Data File - error");
             ui->statusbar->showMessage("Ошибка чтения данных", 2000);
+
+            ui->label_time->setText("Оставшееся время: 0.00 cек");
+            ui->label_speed_byte->setText("Скорость чтения:     0.00 кБайт/cек");
+            ui->label_last_time->setText("Прошедшее время:           0.00 cек");
+            ui->label_medium_speed->setText("Средняя скорость чтения: 0.00 кБайт/cек");
 
             ui->Button_Cancellation ->setEnabled(false);
             ui->Button_Pause        ->setEnabled(false);

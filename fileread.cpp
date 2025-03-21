@@ -12,7 +12,7 @@ FileReading::~FileReading() {}
 
 void FileReading::run()
 {
-    //Проверка открытия файла
+    //Попытка открытия файла и его проверка на открытие
     if(!File.open(QIODevice::ReadOnly))
     {
         //Уведомление о фейле чтения
@@ -40,13 +40,22 @@ void FileReading::run()
             emit readingData(Result_cancel);
             return;
         }
+        //Нажата кнопка паузы в ходим в бесконечный цикл ожидания, пока не будет изменен PauseMarker
         if(PauseMarker.testAndSetAcquire(true, true))
         {
             emit readingData(Result_pause);
-            while(PauseMarker.testAndSetAcquire(true, true))
+            while(PauseMarker.testAndSetOrdered(true, true))
             {
+                if(CancelMarker.testAndSetAcquire(true, true))
+                {
+                    emit readingData(Result_cancel);
+                    return;
+                }
                 QThread::msleep(500);
             }
+            //Обнуляем PauseMarker
+            PauseMarker.deref();
+            PauseMarker.deref();
             emit readingData(Result_resume);
         }
 
@@ -66,7 +75,7 @@ void FileReading::run()
 
         //Вычисление основных характеристик
         float procent = static_cast<float>(100*File.pos()) / File.size();
-        float speedread = static_cast<float>(SizeChunkRead * 1024) / (time.elapsed());
+        float speedread = static_cast<float>(SizeChunkRead) / (time.elapsed());
         float remainingtime = static_cast<float>(File.size() - File.pos()) / speedread;
         float lasttime = last_time.elapsed();
         float mediumspeed = static_cast<float>(File.pos()) / lasttime;

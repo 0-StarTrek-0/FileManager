@@ -2,6 +2,10 @@
 
 Log::Log()
 {}
+Log::~Log()
+{
+    delete file;
+}
 
 void Log::SaveFile(QString Action, QString InformationFile)
 {

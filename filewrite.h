@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QRunnable>
+#include <QThread>
 #include <QFile>
 #include <QFileInfo>
 #include <QElapsedTimer>
@@ -16,7 +17,9 @@ public:
     {
         Result_sucf,
         Result_fail,
-        Result_cancel
+        Result_cancel,
+        Result_pause,
+        Result_resume
     };
 public:
     FileWriting(const QString& FileName, QByteArray& DataFile, quint64 SizeChunk = 102'400);
@@ -26,6 +29,7 @@ public:
 
 public slots:
     void cancel();
+    void pause();
 
 signals:
     void progressChanged(float procent, float remainingtime, float speedread, float lasttime, float mediumspeed);
@@ -45,6 +49,7 @@ private:
 
     //Атомарные переменные
     QAtomicInt CancelMarker;
+    QAtomicInt PauseMarker;
 };
 
 #endif // FILEWRITE_H
